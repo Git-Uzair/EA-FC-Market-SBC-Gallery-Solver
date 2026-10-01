@@ -1,0 +1,14 @@
+# Browser-automation logs, page snapshots and screenshots (can show account details)
+.playwright-mcp/
+Screenshots/
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+
+# Runtime state and club/SBC dumps from the account; the scripts regenerate them
+data/*
+!data/gallery_bottleneck_targets.json
+!data/gallery_pools_raw.json
