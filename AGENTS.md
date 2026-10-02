@@ -51,9 +51,10 @@ Retired, never run: `scripts/trade_runner.js`, `scripts/snipe_runner.js`. Sectio
 
 ---
 
-This repository contains two core operational engines for EA Sports FC Ultimate Team (FUT):
-1. **FUT Gallery Set Completer**: Automates completing club sets on FUT.GG to reach token milestones (300 Gallery Tokens objective reached, 32 completed sets tracked in `COMPLETED_SETS.md`).
-2. **Verified-Price Trading Engine** (`scripts/market_engine.js`): buys FUT Gallery set cards only when the live, drilled-down market price proves a margin after the 5% tax, and relists at a verified price. Only realized (sold) profit counts. Measured reality: hot set-card floors are efficient; margins are ~100-150 coins per flip at best (see skill `fc-market-sniping-arbitrage`).
+This repository contains three core operational engines for EA Sports FC Ultimate Team (FUT):
+1. **Paletools In-App Gallery Engine** (`PALETOOLS_GALLERY.md`): Direct in-game Gallery viewer, real-time collection tracking, exact grading formula optimization, and one-click missing card market searching across all 127 sets in the Web App.
+2. **FUT Gallery Set Completer**: Automates completing club sets on FUT.GG to reach token milestones (56 sets complete, 32 tracked in `COMPLETED_SETS.md`).
+3. **Verified-Price Trading Engine** (`scripts/market_engine.js`): buys FUT Gallery set cards only when the live, drilled-down market price proves a margin after the 5% tax, and relists at a verified price. Only realized (sold) profit counts. Measured reality: hot set-card floors are efficient; margins are ~100-150 coins per flip at best (see skill `fc-market-sniping-arbitrage`).
 
 ---
 
@@ -294,6 +295,14 @@ The workflow operates across an active Playwright browser session maintaining de
 - **Problem**: Relying on real-world squads or older FIFA/FC editions causes massive failures (e.g. buying Dennis Man for Parma or Pablo Marí for Monza when neither is in the FC 27 club set).
 - **Rule (Mandatory)**:
   - Always query the actual FUT.GG set pool API (`/api/fut/gallery/fc27/sets/<id>/pool/`) and check the `clubEaId` and `eaId` definitions. Only players present in that pool can count toward the set.
+
+### Trap 21: The Special / In-Form vs Base Card Autocomplete Trap (Rating & Special Assertion)
+- **Problem**: Players featured in special sets (TOTW, Heroes, Holographics, Promos) possess common/base cards (e.g. 74 Silver or 76 Gold for ~1,000 coins) alongside their Special/In-Form versions (e.g. 80+ rating for ~10,500+ coins). EA FC autocomplete searches only by the base player persona. Searching without strict rating and special validation causes the market to return the cheap base card first. Purchasing this card completely fails to satisfy the set requirement and wastes coins.
+- **Rule (Mandatory)**:
+  1. **Strict Rating Matching on Results**: Inspect the EA internal memory collection (`_collection[i]`) and assert `it.rating === target.rating`. Never purchase a 74/76 card when an 80+ TOTW/Special version is required.
+  2. **Special Flag Verification**: Assert `it.isSpecial() === true` and `it.rareflag === target.rareflag` (e.g. rareflag 3 for TOTW, 72 for Hero).
+  3. **Adaptive Price Ladder Probing**: If only base cards appear at low price tiers, the search must back out (` [ Digit1 ]`) and step up the probe price until the true special card price tier is reached.
+  4. **Strict EA Price Ladder Compliance**: Starting price and probe increments must adhere to EA's discrete ladder steps: $\le 1000$ (step 50), $1000-10000$ (step 100), $10000-50000$ (step 250), $>50000$ (step 500).
 
 ---
 

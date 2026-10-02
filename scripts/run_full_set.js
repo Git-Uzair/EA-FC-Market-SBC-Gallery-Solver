@@ -260,9 +260,16 @@ async (page) => {
     }
 
     // 4. Dynamic Step-Probing Price Discovery
+    const roundToLadder = (p) => {
+      if (p <= 1000) return Math.max(Math.round(p / 50) * 50, 200);
+      if (p <= 10000) return Math.round(p / 100) * 100;
+      if (p <= 50000) return Math.round(p / 250) * 250;
+      return Math.round(p / 500) * 500;
+    };
+
     const est = target.estimatedPrice || 800;
-    const hardMaxCap = est > 2000 ? Math.round(est * 1.3) : Math.min(Math.max(est * 1.8, 600), 2800);
-    let probePrice = minStartingProbe ? Math.min(minStartingProbe, hardMaxCap) : Math.round(est * 0.85);
+    const hardMaxCap = roundToLadder(est > 2000 ? Math.round(est * 1.3) : Math.min(Math.max(est * 1.8, 600), 2800));
+    let probePrice = roundToLadder(minStartingProbe ? Math.min(minStartingProbe, hardMaxCap) : Math.round(est * 0.85));
 
     const maxBuyInput = appPage.locator('.price-filter .ut-numeric-input-spinner-control input').nth(3);
     let foundResults = false;
@@ -279,64 +286,88 @@ async (page) => {
       await appPage.getByRole('button', { name: 'Search [ Digit2]' }).click();
       await sleep(1200);
 
-      const noResults = appPage.getByRole('heading', { name: 'No results found' });
-      if (await noResults.isVisible()) {
+      const matchStatus = await appPage.evaluate(({ targetRating, isSpecial }) => {
+        const noRes = !!document.querySelector('.ut-no-results-view, .ut-transfer-market-search-results-view h2');
+        if (noRes) return { noResults: true, hasMatching: false };
+
+        const ctrl = window.getAppMain().getRootViewController().currentController.currentController.currentController;
+        const coll = ctrl?._listController?.paginationViewModel?.paginationList?._collection || [];
+        if (coll.length === 0) return { noResults: true, hasMatching: false };
+
+        const hasMatch = coll.some(it => (!targetRating || it.rating === targetRating) && (!isSpecial || (typeof it.isSpecial === 'function' ? it.isSpecial() : it.rareflag > 0)));
+        return { noResults: false, hasMatching: hasMatch, count: coll.length };
+      }, { targetRating: target.rating, isSpecial: !!target.isSpecial });
+
+      if (matchStatus.noResults || !matchStatus.hasMatching) {
         await appPage.getByRole('button', { name: ' [ Digit1 ]' }).click();
         await sleep(500);
-        probePrice += (probePrice < 1000 ? 150 : 250);
+        probePrice = roundToLadder(probePrice + (probePrice < 1000 ? 150 : (probePrice < 10000 ? 250 : 500)));
       } else {
         foundResults = true;
       }
     }
 
     if (!foundResults) {
-      result.error = `No listings found for ${target.name} under ${hardMaxCap} cap (probed up to ${Math.round(probePrice)})`;
+      result.error = `No listings matching rating ${target.rating} found for ${target.name} under ${hardMaxCap} cap (probed up to ${Math.round(probePrice)})`;
       return result;
     }
 
-    // 5. Parse all listings and select the one with lowest Buy Now price (skipping <1m cards)
-    const items = appPage.getByRole('listitem');
-    const itemCount = await items.count();
-    if (itemCount === 0) {
-      result.error = `No items rendered for ${target.name}`;
-      return result;
-    }
+    // 5. Select the listing that strictly matches target rating and special status via internal data model
+    const selection = await appPage.evaluate(({ targetRating, isSpecial, hardMaxCap }) => {
+      const ctrl = window.getAppMain().getRootViewController().currentController.currentController.currentController;
+      const coll = ctrl?._listController?.paginationViewModel?.paginationList?._collection || [];
+      
+      let bestIdx = -1;
+      let bestPrice = Infinity;
+      let fallbackIdx = -1;
+      let fallbackPrice = Infinity;
 
-    let lowestPrice = Infinity;
-    let targetIndex = -1;
-    let fallbackLowestPrice = Infinity;
-    let fallbackIndex = 0;
+      for (let i = 0; i < coll.length; i++) {
+        const it = coll[i];
+        if (!it || !it._auction) continue;
 
-    for (let i = 0; i < Math.min(itemCount, 25); i++) {
-      const text = await items.nth(i).innerText();
-      const match = text.match(/Buy Now:\s*([\d,]+)/i);
-      if (match) {
-        const price = parseInt(match[1].replace(/,/g, ''), 10);
-        if (price < fallbackLowestPrice) {
-          fallbackLowestPrice = price;
-          fallbackIndex = i;
+        // Strict rating check
+        if (targetRating && it.rating !== targetRating) continue;
+        // Strict special check
+        const isSpec = typeof it.isSpecial === 'function' ? it.isSpecial() : it.rareflag > 0;
+        if (isSpecial && !isSpec) continue;
+
+        const price = it._auction.buyNowPrice;
+        if (price <= 0 || price > hardMaxCap) continue;
+
+        if (price < fallbackPrice) {
+          fallbackPrice = price;
+          fallbackIdx = i;
         }
 
-        const isExpiring = text.includes('<30 Seconds') || text.includes('1 Minute');
-        if (!isExpiring && price < lowestPrice) {
-          lowestPrice = price;
-          targetIndex = i;
+        const expires = it._auction.expires;
+        if (expires > 60 && price < bestPrice) {
+          bestPrice = price;
+          bestIdx = i;
         }
       }
-    }
 
-    if (targetIndex === -1) {
-      targetIndex = fallbackIndex;
-      lowestPrice = fallbackLowestPrice;
-    }
+      const finalIdx = bestIdx !== -1 ? bestIdx : fallbackIdx;
+      const finalPrice = bestIdx !== -1 ? bestPrice : fallbackPrice;
 
-    if (lowestPrice > hardMaxCap) {
-      result.error = `Lowest price for ${target.name} is too high (${lowestPrice} > cap ${hardMaxCap}). Aborting.`;
+      return {
+        found: finalIdx !== -1,
+        index: finalIdx,
+        price: finalPrice,
+        rating: finalIdx !== -1 ? coll[finalIdx].rating : null,
+        name: finalIdx !== -1 ? coll[finalIdx]._staticData?.name : null
+      };
+    }, { targetRating: target.rating, isSpecial: !!target.isSpecial, hardMaxCap });
+
+    if (!selection.found) {
+      result.error = `No listing strictly matching rating ${target.rating} found for ${target.name} under ${hardMaxCap}`;
       await appPage.getByRole('button', { name: ' [ Digit1 ]' }).click().catch(() => {});
       return result;
     }
 
-    await items.nth(targetIndex).click();
+    const lowestPrice = selection.price;
+    const items = appPage.getByRole('listitem');
+    await items.nth(selection.index).click();
     await sleep(500);
 
     // 6. Buy card
@@ -374,7 +405,7 @@ async (page) => {
     } catch (e) {
       result.error = `Buy Now click failed (likely sniped): ${e.message}`;
       result.wasSniped = true;
-      result.nextProbePrice = Math.min((lowestPrice || probePrice) + 150, hardMaxCap);
+      result.nextProbePrice = roundToLadder(Math.min((lowestPrice || probePrice) + (probePrice < 1000 ? 150 : (probePrice < 10000 ? 250 : 500)), hardMaxCap));
       await appPage.getByRole('button', { name: ' [ Digit1 ]' }).click().catch(() => {});
       return result;
     }
@@ -390,7 +421,7 @@ async (page) => {
     if (isSnipedToast) {
       result.error = `Card was already sold / sniped ("${toastText.replace(/\s+/g, ' ')}"). Retrying with increased price probe.`;
       result.wasSniped = true;
-      result.nextProbePrice = Math.min((lowestPrice || probePrice) + 150, hardMaxCap);
+      result.nextProbePrice = roundToLadder(Math.min((lowestPrice || probePrice) + (probePrice < 1000 ? 150 : (probePrice < 10000 ? 250 : 500)), hardMaxCap));
       return result;
     }
 
@@ -405,7 +436,7 @@ async (page) => {
       if (!await unassignedTile.isVisible()) {
         result.error = `Failed to acquire ${target.name} (likely sniped right before purchase click). Retrying with increased price probe.`;
         result.wasSniped = true;
-        result.nextProbePrice = Math.min((lowestPrice || probePrice) + 150, hardMaxCap);
+        result.nextProbePrice = roundToLadder(Math.min((lowestPrice || probePrice) + (probePrice < 1000 ? 150 : (probePrice < 10000 ? 250 : 500)), hardMaxCap));
         return result;
       }
     }
@@ -466,8 +497,10 @@ async (page) => {
     while (Date.now() - pollStart < 1500) {
       const val = await buyNowInput.inputValue().catch(() => '');
       const cleanVal = parseInt((val || '').replace(/,/g, ''), 10);
-      // Valid Paletools price must NOT be EA default banding (5000 or 10000) and must be near our bought price
-      if (cleanVal && cleanVal > 0 && cleanVal < 5000 && cleanVal <= Math.max(boughtNum + 200, 1000)) {
+      // Valid Paletools price must NOT be EA default banding and must be near our bought price
+      const maxAllowed = boughtNum > 2000 ? Math.max(boughtNum * 1.15, boughtNum + 500) : Math.max(boughtNum + 200, 1000);
+      const bandingCap = boughtNum > 2000 ? boughtNum * 1.4 : 5000;
+      if (cleanVal && cleanVal > 0 && cleanVal <= maxAllowed && cleanVal < bandingCap) {
         paletoolsPopulatedValid = true;
         break;
       }
@@ -477,7 +510,11 @@ async (page) => {
     // If Paletools didn't populate a cheap, valid price, ALWAYS enforce the true market floor:
     if (!paletoolsPopulatedValid) {
       const safeBuyNow = Math.max(boughtNum, 200);
-      const safeStart = safeBuyNow <= 1000 ? Math.max(safeBuyNow - 50, 150) : safeBuyNow - 100;
+      let safeStart;
+      if (safeBuyNow <= 1000) safeStart = Math.max(safeBuyNow - 50, 150);
+      else if (safeBuyNow <= 10000) safeStart = safeBuyNow - 100;
+      else if (safeBuyNow <= 50000) safeStart = safeBuyNow - 250;
+      else safeStart = safeBuyNow - 500;
       await startPriceInput.click();
       await startPriceInput.fill(`${safeStart}`);
       await sleep(150);
