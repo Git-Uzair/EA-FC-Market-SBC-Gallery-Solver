@@ -58,6 +58,7 @@ This file tracks all completed sets where all 15 required cards have been purcha
 | 36 | Ligue 1 | **Paris Saint-Germain** | 0 | Completed & Relisted | 2026-09-28 | C Grade
 |Please fill| LaLiga EA Sports | **Malaga CF** | Completed by user | unknown | A Grade
 | 99 | Rarities | **Team of the Week** | 5 | Completed & Relisted (20/20) | 2026-10-02 | D Grade (6,202 pts)
+| 102 | Rarities | **Heroes** | 5 | Completed & Relisted (5/5) | 2026-10-02 | D Grade (22,885 pts)
 
 
 Premier league D Grade
