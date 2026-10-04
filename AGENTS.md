@@ -304,6 +304,16 @@ The workflow operates across an active Playwright browser session maintaining de
   3. **Adaptive Price Ladder Probing**: If only base cards appear at low price tiers, the search must back out (` [ Digit1 ]`) and step up the probe price until the true special card price tier is reached.
   4. **Strict EA Price Ladder Compliance**: Starting price and probe increments must adhere to EA's discrete ladder steps: $\le 1000$ (step 50), $1000-10000$ (step 100), $10000-50000$ (step 250), $>50000$ (step 500).
 
+### Trap 22: Holographic (Foil) Scope & The Paletools DefId Truncation Trap
+- **Problem**:
+  1. In the Web App, Paletools loads set entries by querying `GET /ut/game/fc27/defid?count=200&sort=desc&start=0&type=player`. Because it requests only 200 items sorted descending by rating without pagination, it truncates at 89 OVR, displaying only 63 cards (58 Icons + 4 high TOTWs + Mbappé) and giving the false impression that Holographics requires 400k–500k+ Icons.
+  2. The actual pool for Holographics (Set 113) on FUT.GG (`/api/fut/gallery/fc27/sets/113/pool/`) contains **326 cards**, including **69 TOTW cards** (starting at 80 OVR discard price ~10,000 coins: Dunk 80, Shaqiri 80, Paradela 80, etc.), **87 Base Heroes** (including 85 OVR like Cahill, Dempsey, Crouch at ~40k), and **15 Promos** (Destined for Glory).
+  3. However, NOT all TOTWs are Holographic! For example, Zeki Amdouni (80 TOTW) has `foilSubtype: -1` (not foil), while Lewis Dunk (80 TOTW) and Xherdan Shaqiri (80 TOTW) have `foilSubtype: 0` (`hyperCosmetics.1.subtype === 0`, confirmed Foil).
+- **Rule (Mandatory)**:
+  1. Never assume Holographics requires expensive Icons. It requires only **5 cards** and can be completed cheaply using discard 80-rated Foil TOTWs (~10,000 coins each).
+  2. Always verify a target card against FUT.GG pool API where `"holographic": true` or assert `it.getFoilSubtype() === 0` in EA memory before purchase.
+  3. Execute via standard Buy Now $\rightarrow$ Store $\rightarrow$ Unassigned $\rightarrow$ Relist instantly.
+
 ---
 
 ## 5. Speed & Execution Optimizations (Key Learnings)

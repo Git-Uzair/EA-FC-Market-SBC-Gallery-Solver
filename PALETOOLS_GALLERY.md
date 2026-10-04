@@ -225,10 +225,20 @@ nav.popViewController();
      Never purchase a 74 or 76 card when the target is an 80+ TOTW/Special version.
   2. **Rarity & Special Flag Assertion**: Assert `card.rareflag === target.rareflag` (e.g. rareflag 3 for TOTW, 72 for Hero) or `card.isSpecial() === true`.
   3. **Adaptive Price Probe Stepping**: If only base cards appear at low prices, the step-probe algorithm must automatically back out (`button " [ Digit1 ]"`) and increment `probePrice` until the true special card price tier is reached.
-  4. **Set Scope Realities (TOTW vs Holographics)**:
-     - 80-rated TOTWs (Amdouni, Berhalter, Martín, Charles, etc.) register for the **TOTW Set** (4/20 tracked, 1,528 pts).
-     - Holographics requires high-end Icons (89–95 OVR) or 89–91 TOTWs (Raphinha 89, Yamal 91, Olise 91).
-     - Heroes requires 85+ Base Heroes (~40k–42k floor).
+  4. **Set Scope Realities (TOTW vs Heroes vs Holographics)**:
+     - **TOTW Set (id: 99)**: Requires 20 cards. Standard 80-rated discard TOTWs (~10,000–10,500 coins) register here.
+     - **Heroes Set (id: 102)**: Requires 5 cards. Lowest rated are 85-rated base Heroes (Cahill, Dempsey, Crouch, Howard, Beasley) at ~40,000–42,000 coins.
+     - **Holographics Set (id: 113)**: Requires 5 cards. **Holographics are NOT restricted to Icons!**
+       - In EA FC, Holographic cards are defined by `item.getFoilSubtype() !== -1` (specifically `item._hyperCosmeticDTOs[1]?.subtype === 0` for Foil).
+       - The actual FUT.GG pool (`/api/fut/gallery/fc27/sets/113/pool/`) contains **326 cards**:
+         - **TOTW (69 cards)**: Includes discard 80-rated TOTWs like **Lewis Dunk** (80, defId: 50531563) and **Xherdan Shaqiri** (80, defId: 50524996) at ~10,000–10,500 coins. Both verified live in EA memory with `foilSubtype: 0`!
+         - **Base Heroes (87 cards)**: Includes 85-rated Heroes like **Tim Cahill** (85, eaId: 67160276) at ~40,000 coins (verified live with `foilSubtype: 0`).
+         - **Promos (15 cards)**: Destined for Glory (Mbappé 91, Nuno Mendes 89, Isak 88).
+         - **Debut International Icons (18 cards)**: Zidane 86, Touré 86, Schweinsteiger 86.
+         - **Squad Foundations (1 card)**: Jesús Corona 84.
+         - **Base Icons (136 cards)**: 89–95 OVR Icons.
+       - **Crucial Distinction (Not All TOTWs are Foil)**: Zeki Amdouni (80 TOTW, defId: 50594290) has `foilSubtype: -1` and is NOT Holographic. Always verify `item.getFoilSubtype() === 0` or check the FUT.GG pool API where `"holographic": true`.
+       - **The Paletools UI Truncation Trap**: In the Web App, Paletools calls `GET /defid?count=200&sort=desc&start=0&type=player`. Because it requests only 200 items sorted descending without pagination, it truncates at 89 OVR, displaying only 63 cards (Icons + top TOTWs/Mbappé) and hiding the cheaper 80–88 OVR cards. Holographics is fully completable with 5 discard ~10,000-coin TOTWs (e.g. Dunk, Shaqiri, Paradela, Stoica, Mijnans).
 
 ---
 

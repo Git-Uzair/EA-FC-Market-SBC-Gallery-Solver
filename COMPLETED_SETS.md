@@ -59,6 +59,11 @@ This file tracks all completed sets where all 15 required cards have been purcha
 |Please fill| LaLiga EA Sports | **Malaga CF** | Completed by user | unknown | A Grade
 | 99 | Rarities | **Team of the Week** | 5 | Completed & Relisted (20/20) | 2026-10-02 | D Grade (6,202 pts)
 | 102 | Rarities | **Heroes** | 5 | Completed & Relisted (5/5) | 2026-10-02 | D Grade (22,885 pts)
+| 113 | Rarities | **Holographics** | 5 | Completed & Relisted (5/5) | 2026-10-02 | D Grade (900+ pts)
+| 65 | Bundesliga | **Bayer 04 Leverkusen** | 0 | Completed & Relisted (15/15) | 2026-10-02 | Grade D/C (Andrich 78)
+| 52 | Bundesliga | **FC Bayern München** | 0 | Completed & Relisted (20/20) | 2026-10-02 | Grade D/C (Ballisager 77)
+| 40 | Liga F | **FC Badalona Women** | 13 | Completed & Relisted (15/15) | 2026-10-02 | Grade A (Losada 78, Cubedo 76)
+| 107 | Serie A | **Lombardia FC** | 0 | Completed & Relisted (15/15) | 2026-10-02 | Grade D/C (Di Gennaro 68, Diouf 76, Augusto 80)
 
 
 Premier league D Grade
@@ -76,11 +81,25 @@ Seria A Enilive D greade
 Bundesliga C Grade
 ---
 
-## Objective Status: **343 TOKENS (46 COMPLETED SETS)**
+## Completed Sets in Current Session (2026-10-02)
+
+| Set ID | Category / League | Set Name | Date Completed | Cards Acquired & Relisted | Final Grade | Tokens Earned | Notes |
+|---|---|---|---|---|---|---|---|
+| **99** | Rarities | **Team of the Week** | **2026-10-02** | 16 TOTW cards acquired & relisted (Dunk 80, Shaqiri 80, Amdouni 80, Berhalter 80, Martín 80, Charles 80, etc.) | Grade D (6,202 pts) | +5 Tokens | 20/20 cards tracked; all relisted |
+| **102** | Rarities | **Heroes** | **2026-10-02** | 5 Base Heroes acquired & relisted (Pizarro 86, Campos 87, Kanu 86, Cahill 85, Bierhoff 86) | Grade D (22,885 pts) | +5 Tokens | 5/5 cards tracked; all sold & cleared |
+| **113** | Rarities | **Holographics** | **2026-10-02** | 5 Foil TOTWs acquired & relisted (Dunk 80, Shaqiri 80, Paradela 80, Stoica 80, Mijnans 80) | Grade D (900+ pts) | +5 Tokens | 5/5 cards tracked; confirmed Foil Subtype 0 |
+| **65** | Bundesliga | **Bayer 04 Leverkusen** | **2026-10-02** | Robert Andrich 78 (750 coins) | Grade D/C | +0 Tokens (Completion) | 15/15 cards complete; relisted at 750 |
+| **52** | Bundesliga | **FC Bayern München** | **2026-10-02** | Stine Ballisager 77 (750 coins) | Grade D/C | +0 Tokens (Completion) | 20/20 cards complete; relisted at 750 |
+| **40** | Liga F | **FC Badalona Women** | **2026-10-02** | Vicky Losada 78 (800 coins), Cristina Cubedo 76 (950 coins) | Grade A (1,269 pts) | +13 Tokens | 15/15 cards complete; both relisted |
+| **107** | Serie A | **Lombardia FC** | **2026-10-02** | Raffaele Di Gennaro 68 (750 coins), Andy Diouf 76 (900 coins), Carlos Augusto 80 (750 coins) | Grade D/C | +0 Tokens (Completion) | 15/15 cards complete; all relisted |
+
+---
+
+## Objective Status: **361 TOKENS (51 COMPLETED SETS)**
 
 - **Target**: Maximum Tokens until 15k coins remaining
-- **Total Tokens Earned**: **343 Tokens** across 46 completed sets
-- **Current Balance**: ~85,941 coins (with active cards listed at cheapest floor constantly selling)
+- **Total Tokens Earned**: **361 Tokens** across 51 completed sets
+- **Current Balance**: ~104,604 coins (recovering to ~140,000+ as remaining listings clear)
 - **Transfer List Capacity**: 45 / 100 items (healthy capacity; multiple sales continuously clearing)
 - **All Audited Sets Completed**: All 8 incomplete sets identified from in-game screenshots have had 100% of their missing cards acquired and relisted.
 
